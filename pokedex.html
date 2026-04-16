@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokédex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .pokedex {
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+
+    .dex-header {
+      background: #e3000b;
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .dex-lens {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #38bdf8;
+      border: 4px solid white;
+      box-shadow: inset -4px -4px 0 rgba(0,0,0,0.15);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .dex-lens::after {
+      content: '';
+      position: absolute; top: 6px; left: 6px;
+      width: 12px; height: 12px;
+      background: white; border-radius: 50%; opacity: 0.5;
+    }
+
+    .dex-leds { display: flex; gap: 5px; }
+    .led { width: 10px; height: 10px; border-radius: 50%; }
+    .led.r { background: #ff4444; }
+    .led.y { background: #ffcc00; }
+    .led.g { background: #44ff44; }
+
+    .dex-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px; color: white;
+      letter-spacing: 1px;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    }
+
+    .search-bar {
+      background: #cc0009;
+      padding: 10px 16px;
+      display: flex; gap: 8px; align-items: center;
+    }
+
+    .search-bar input {
+      flex: 1;
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 20px;
+      padding: 8px 16px;
+      color: white;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+    }
+    .search-bar input::placeholder { color: rgba(255,255,255,0.6); }
+    .search-bar input:focus { border-color: white; background: rgba(255,255,255,0.25); }
+
+    .search-bar button {
+      background: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #cc0009;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .search-bar button:hover { transform: scale(1.03); }
+    .search-bar button:active { transform: scale(0.97); }
+
+    .content-area {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #f4f4f8;
+    }
+
+    .pokemon-card {
+      display: none;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+    }
+    .pokemon-card.visible { display: block; }
+
+    .card-top {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 16px;
+    }
+
+    .poke-sprite-wrap {
+      width: 110px; height: 110px;
+      background: #f4f4f8;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .poke-sprite-wrap img { width: 96px; height: 96px; image-rendering: pixelated; }
+
+    .poke-info { flex: 1; }
+    .poke-number { font-size: 11px; color: #6b7280; font-weight: 600; margin-bottom: 2px; }
+    .poke-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      color: #111827;
+      margin-bottom: 10px;
+      line-height: 1.4;
+      text-transform: capitalize;
+    }
+
+    .type-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .type-badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      text-transform: capitalize;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .poke-meta { display: flex; gap: 14px; }
+    .meta-item { font-size: 12px; color: #6b7280; }
+    .meta-item strong { color: #111827; font-weight: 700; display: block; font-size: 13px; }
+
+    .stats-section { padding: 0 16px 16px; }
+    .section-title {
+      font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+    }
+
+    .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+    .stat-name { font-size: 11px; color: #6b7280; width: 80px; font-weight: 600; }
+    .stat-val { font-size: 12px; font-weight: 700; color: #111827; width: 32px; text-align: right; }
+    .stat-bar-wrap { flex: 1; height: 7px; background: #f4f4f8; border-radius: 4px; overflow: hidden; }
+    .stat-bar { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+    .abilities-section { padding: 0 16px 16px; }
+    .ability-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .ability-chip {
+      background: #f4f4f8;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      text-transform: capitalize;
+    }
+    .ability-chip.hidden { border-style: dashed; color: #9ca3af; }
+
+    .evolutions-section {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      padding: 16px;
+      display: none;
+    }
+    .evolutions-section.visible { display: block; }
+    .evo-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: #6b7280;
+      margin-bottom: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .evo-chain {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .evo-node {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      cursor: pointer; transition: transform 0.15s;
+      padding: 8px 6px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      min-width: 80px;
+    }
+    .evo-node:hover { transform: translateY(-3px); background: #f4f4f8; border-color: #d1d5db; }
+    .evo-node.active { background: #f4f4f8; border-color: #9ca3af; }
+
+    .evo-img-wrap {
+      width: 64px; height: 64px;
+      background: #f4f4f8;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid #e5e7eb;
+    }
+    .evo-img-wrap img { width: 52px; height: 52px; image-rendering: pixelated; }
+    .evo-name { font-size: 11px; font-weight: 700; color: #111827; text-transform: capitalize; text-align: center; }
+    .evo-num { font-size: 10px; color: #6b7280; }
+
+    .evo-arrow {
+      font-size: 18px; color: #9ca3af;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .evo-trigger { font-size: 9px; color: #9ca3af; font-weight: 600; text-align: center; max-width: 60px; line-height: 1.3; }
+
+    .state-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 48px 24px; gap: 12px; text-align: center;
+      color: #6b7280;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+    }
+    .pokeball-icon {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(to bottom, #e3000b 50%, white 50%);
+      border: 3px solid #d1d5db;
+      position: relative;
+    }
+    .pokeball-icon::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 14px; height: 14px; background: white;
+      border-radius: 50%; border: 3px solid #d1d5db; z-index: 1;
+    }
+    .pokeball-icon::after {
+      content: ''; position: absolute; top: calc(50% - 1.5px); left: 0; right: 0;
+      height: 3px; background: #d1d5db;
+    }
+    .placeholder-text { font-size: 13px; font-weight: 700; }
+    .placeholder-sub { font-size: 12px; }
+
+    .loading-spinner {
+      display: none; align-items: center; justify-content: center; padding: 48px;
+      background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb;
+    }
+    .loading-spinner.visible { display: flex; }
+    .spinner-ball {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: conic-gradient(#e3000b 0deg 180deg, white 180deg 360deg);
+      border: 3px solid #d1d5db;
+      animation: spin 0.8s linear infinite;
+      position: relative;
+    }
+    .spinner-ball::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px; height: 10px;
+      background: white; border-radius: 50%;
+      border: 3px solid #d1d5db;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      display: none; text-align: center; padding: 32px;
+      font-size: 13px; color: #c03028; font-weight: 700;
+      background: #fff5f5; border-radius: 16px; border: 1px solid #fecaca;
+    }
+    .error-msg.visible { display: block; }
+
+    @media (max-width: 520px) {
+      body { padding: 16px 8px; }
+      .card-top { flex-direction: column; align-items: center; text-align: center; }
+      .poke-meta { justify-content: center; }
+      .type-badges { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="pokedex">
+  <div class="dex-header">
+    <div class="dex-lens"></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="dex-title">Pokédex</div>
+      <div class="dex-leds">
+        <div class="led r"></div>
+        <div class="led y"></div>
+        <div class="led g"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Nome ou número (ex: pikachu, 25)" />
+    <button onclick="searchPokemon()">Buscar</button>
+  </div>
+
+  <div class="content-area">
+    <div id="placeholder" class="state-placeholder">
+      <div class="pokeball-icon"></div>
+      <p class="placeholder-text">Sua Pokédex está pronta!</p>
+      <p class="placeholder-sub">Busque por nome ou número para começar</p>
+    </div>
+    <div id="loadingSpinner" class="loading-spinner"><div class="spinner-ball"></div></div>
+    <div id="errorMsg" class="error-msg">Pokémon não encontrado. Tente outro nome ou número.</div>
+
+    <div id="pokemonCard" class="pokemon-card">
+      <div class="card-top">
+        <div class="poke-sprite-wrap">
+          <img id="pokeSprite" src="" alt="" />
+        </div>
+        <div class="poke-info">
+          <div class="poke-number" id="pokeNumber"></div>
+          <div class="poke-name" id="pokeName"></div>
+          <div class="type-badges" id="pokeTypes"></div>
+          <div class="poke-meta">
+            <div class="meta-item"><strong id="pokeHeight"></strong>Altura</div>
+            <div class="meta-item"><strong id="pokeWeight"></strong>Peso</div>
+            <div class="meta-item"><strong id="pokeExp"></strong>Exp. base</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <div class="section-title">Estatísticas</div>
+        <div id="statsContainer"></div>
+      </div>
+
+      <div class="abilities-section">
+        <div class="section-title">Habilidades</div>
+        <div class="ability-chips" id="abilitiesContainer"></div>
+      </div>
+    </div>
+
+    <div id="evolutionsSection" class="evolutions-section">
+      <div class="evo-title">Cadeia evolutiva</div>
+      <div id="evoChain" class="evo-chain"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const statNames = {
+    hp: 'HP', attack: 'Ataque', defense: 'Defesa',
+    'special-attack': 'Atq. Esp.', 'special-defense': 'Def. Esp.', speed: 'Velocidade'
+  };
+  const statColors = {
+    hp: '#f87171', attack: '#fb923c', defense: '#facc15',
+    'special-attack': '#818cf8', 'special-defense': '#34d399', speed: '#38bdf8'
+  };
+
+  function getTypeColor(type) {
+    const map = {
+      normal:'#A8A878', fire:'#F08030', water:'#6890F0', electric:'#F8D030',
+      grass:'#78C850', ice:'#98D8D8', fighting:'#C03028', poison:'#A040A0',
+      ground:'#E0C068', flying:'#A890F0', psychic:'#F85888', bug:'#A8B820',
+      rock:'#B8A038', ghost:'#705898', dragon:'#7038F8', dark:'#705848',
+      steel:'#B8B8D0', fairy:'#EE99AC'
+    };
+    return map[type] || '#888';
+  }
+
+  function show(id) { document.getElementById(id).classList.add('visible'); }
+  function hide(id) { document.getElementById(id).classList.remove('visible'); }
+
+  document.getElementById('searchInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchPokemon();
+  });
+
+  async function searchPokemon() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if (!q) return;
+    hide('placeholder');
+    hide('pokemonCard');
+    hide('evolutionsSection');
+    hide('errorMsg');
+    show('loadingSpinner');
+    try {
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${q}`);
+      if (!res.ok) throw new Error('not found');
+      const data = await res.json();
+      hide('loadingSpinner');
+      renderPokemon(data);
+      const specRes = await fetch(data.species.url);
+      const specData = await specRes.json();
+      const evoRes = await fetch(specData.evolution_chain.url);
+      const evoData = await evoRes.json();
+      renderEvolutions(evoData.chain, data.id);
+    } catch (e) {
+      hide('loadingSpinner');
+      show('errorMsg');
+    }
+  }
+
+  function renderPokemon(d) {
+    const sprite = d.sprites.other['official-artwork']?.front_default || d.sprites.front_default;
+    document.getElementById('pokeSprite').src = sprite;
+    document.getElementById('pokeSprite').alt = d.name;
+    document.getElementById('pokeNumber').textContent = `#${String(d.id).padStart(3, '0')}`;
+    document.getElementById('pokeName').textContent = d.name;
+    document.getElementById('pokeHeight').textContent = `${(d.height / 10).toFixed(1)}m`;
+    document.getElementById('pokeWeight').textContent = `${(d.weight / 10).toFixed(1)}kg`;
+    document.getElementById('pokeExp').textContent = d.base_experience || '—';
+
+    const typesEl = document.getElementById('pokeTypes');
+    typesEl.innerHTML = '';
+    d.types.forEach(t => {
+      const badge = document.createElement('span');
+      badge.className = 'type-badge';
+      badge.textContent = t.type.name;
+      badge.style.background = getTypeColor(t.type.name);
+      typesEl.appendChild(badge);
+    });
+
+    const statsEl = document.getElementById('statsContainer');
+    statsEl.innerHTML = '';
+    d.stats.forEach(s => {
+      const name = s.stat.name;
+      const val = s.base_stat;
+      const pct = Math.min(100, Math.round(val / 255 * 100));
+      statsEl.innerHTML += `
+        <div class="stat-row">
+          <span class="stat-name">${statNames[name] || name}</span>
+          <span class="stat-val">${val}</span>
+          <div class="stat-bar-wrap">
+            <div class="stat-bar" style="width:${pct}%;background:${statColors[name] || '#888'}"></div>
+          </div>
+        </div>`;
+    });
+
+    const abEl = document.getElementById('abilitiesContainer');
+    abEl.innerHTML = '';
+    d.abilities.forEach(a => {
+      const chip = document.createElement('span');
+      chip.className = 'ability-chip' + (a.is_hidden ? ' hidden' : '');
+      chip.textContent = a.ability.name + (a.is_hidden ? ' (oculta)' : '');
+      abEl.appendChild(chip);
+    });
+
+    show('pokemonCard');
+  }
+
+  async function renderEvolutions(chain, currentId) {
+    const evoEl = document.getElementById('evoChain');
+    evoEl.innerHTML = '';
+
+    const allNames = [];
+    function collectNames(node) {
+      allNames.push(node.species.name);
+      node.evolves_to.forEach(collectNames);
+    }
+    collectNames(chain);
+
+    if (allNames.length <= 1) {
+      show('evolutionsSection');
+      evoEl.innerHTML = '<span style="font-size:12px;color:#6b7280">Este Pokémon não possui evoluções.</span>';
+      return;
+    }
+
+    const pokeDataMap = {};
+    await Promise.all(allNames.map(async name => {
+      const r = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`);
+      pokeDataMap[name] = await r.json();
+    }));
+
+    function buildChainEl(node, isFirst, triggerLabel) {
+      const pd = pokeDataMap[node.species.name];
+      const sprite = pd?.sprites.front_default || '';
+      const id = pd?.id;
+      const isActive = id === currentId;
+
+      if (!isFirst && triggerLabel) {
+        const arrow = document.createElement('div');
+        arrow.className = 'evo-arrow';
+        arrow.innerHTML = `<span>▶</span><span class="evo-trigger">${triggerLabel}</span>`;
+        evoEl.appendChild(arrow);
+      }
+
+      const nodeEl = document.createElement('div');
+      nodeEl.className = 'evo-node' + (isActive ? ' active' : '');
+      nodeEl.innerHTML = `
+        <div class="evo-img-wrap"><img src="${sprite}" alt="${node.species.name}" /></div>
+        <span class="evo-name">${node.species.name}</span>
+        <span class="evo-num">#${String(id).padStart(3, '0')}</span>`;
+      nodeEl.onclick = () => {
+        document.getElementById('searchInput').value = node.species.name;
+        searchPokemon();
+      };
+      evoEl.appendChild(nodeEl);
+
+      node.evolves_to.forEach(next => {
+        const t = next.evolution_details[0];
+        const label = t ? (t.min_level ? `Nv. ${t.min_level}` : t.item?.name || t.trigger?.name || '') : '';
+        buildChainEl(next, false, label);
+      });
+    }
+
+    buildChainEl(chain, true, null);
+    show('evolutionsSection');
+  }
+</script>
+</body>
+</html>
